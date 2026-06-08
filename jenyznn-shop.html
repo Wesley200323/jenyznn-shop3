@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JeNYZNN | IG SELECTS</title>
+  
+  <!-- React and ReactDOM CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel compiler to run JSX directly in browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts for Editorial elegance (Playfair Display for luxury titles) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght=0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght=0,200..800;1,200..800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-serif {
+      font-family: 'Playfair Display', serif;
+    }
+    /* Smooth Scroll and premium clean scrollbar styling */
+    html {
+      scroll-behavior: smooth;
+    }
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FFFFFF;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #E5E5E5;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #B5B5B5;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#FFFFFF] text-[#111111] selection:bg-[#E5E5E5] selection:text-black">
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // 【最前置攔截】：如果此視窗是選完地圖重導向回來的「彈出視窗」，直接向母視窗發送資料並自動關閉！
+    (function detectStoreRedirect() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const storeParam = urlParams.get('store');
+      if (storeParam) {
+        if (window.opener) {
+          try {
+            // 方法 A：透過安全的跨域 postMessage
+            window.opener.postMessage({
+              type: '711_STORE_SELECTED',
+              store: storeParam
+            }, '*');
+          } catch (e) {}
+          
+          try {
+            // 方法 B：如果同域，直接呼叫母視窗的全域回填函式 (最穩固、不被阻擋)
+            if (window.opener.handleStoreSelectedGlobal) {
+              window.opener.handleStoreSelectedGlobal(storeParam);
+            }
+          } catch (e) {}
+        }
+        // 秒速自我關閉彈出視窗
+        window.close();
+      }
+    })();
+
+    const Icons = {
+      ShoppingBag: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <path d="M16 10a4 4 0 0 1-8 0"></path>
+        </svg>
+      ),
+      User: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      ),
+      Globe: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+      ),
+      Heart: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+        </svg>
+      ),
+      Plus: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      ),
+      Minus: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      ),
+      Check: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      ),
+      X: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      ),
+      Package: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+          <polygon points="12 22.08 12 12 3 6.92 3 17.08 12 22.08"></polygon>
+          <polygon points="12 22.08 21 17.08 21 6.92 12 12 12 22.08"></polygon>
+          <polygon points="12 12 21 6.92 12 1.84 3 6.92 12 12"></polygon>
+          <line x1="12" y1="1.84" x2="12" y2="12"></line>
+        </svg>
+      ),
+      Sparkles: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path>
+        </svg>
+      ),
+      Database: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+          <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path>
+        </svg>
+      ),
+      LogOut: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      ),
+      Loader2: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="animate-spin" {...props}>
+          <line x1="12" y1="2" x2="12" y2="6"></line>
+          <line x1="12" y1="18" x2="12" y2="22"></line>
+          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+          <line x1="2" y1="12" x2="6" y2="12"></line>
+          <line x1="18" y1="12" x2="22" y2="12"></line>
+          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+        </svg>
+      ),
+      Instagram: (props) => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+        </svg>
+      )
+    };
+
+    const translations = {
+      zh: {
+        shopName: "JeNYZNN",
+        shopSubtitle: "IG SELECTS • 衣服 & 飾品選物店",
+        navHome: "首頁",
+        navNewIn: "新品上市",
+        navClothing: "精選服飾",
+        navAccessories: "高雅飾品",
+        navLookbook: "風格穿搭",
+        heroTitle: "靜奢美學 • 極簡日常",
+        heroSubtitle: "精選冷淡風慵懶感與極致奢華的完美交織，專為追求極致質感的您量身打造。",
+        shopNow: "探索新品",
+        categoryTitle: "系列分類",
+        featuredProducts: "本週主打商品",
+        addToCart: "加入購物車",
+        quickView: "快速預覽",
+        soldOut: "售完",
+        filterAll: "全部商品",
+        filterClothing: "服飾",
+        filterAccessories: "飾品",
+        cartTitle: "您的購物車",
+        cartEmpty: "購物車目前是空的",
+        subtotal: "小計",
+        checkout: "前往結帳",
+        loginRegister: "註冊 / 登入會員",
+        profileTitle: "會員中心",
+        logout: "登出",
+        registerTitle: "創立專屬時尚帳戶",
+        registerSubtitle: "註冊即可享有新會員首購免運與第一手專屬新品通知",
+        labelName: "姓名",
+        labelAge: "年齡",
+        labelGender: "性別",
+        labelEmail: "電子郵件",
+        labelPassword: "設定密碼",
+        labelStore: "7-11 收件門市",
+        placeholderName: "請輸入您的真實姓名",
+        placeholderAge: "請輸入您的年齡",
+        placeholderEmail: "example@email.com",
+        placeholderPassword: "請設定您的登入密碼 (至少4位元)",
+        placeholderStore: "請點選右側「選擇門市」開啟地圖...",
+        selectStoreBtn: "選擇門市",
+        selectGender: "請選擇性別",
+        genderM: "男",
+        genderF: "女",
+        genderO: "其他 / 保密",
+        submitRegister: "完成註冊，開啟極簡美學",
+        welcomeUser: "您好，",
+        checkoutSuccess: "感謝您的訂購！訂單已成立，包裹將會發送至您的 7-11 門市！",
+        size: "尺寸",
+        oneSize: "單一尺寸 (F)",
+        reviews: "顧客熱烈回饋",
+        igFollow: "追蹤我們的 Instagram 掌握最新消息",
+        cloudSyncActive: "☁️ 雲端 Excel 整合已啟動",
+        cloudSyncInactive: "💡 雲端 Excel 未連線 (僅本地測試)"
+      },
+      en: {
+        shopName: "JeNYZNN",
+        shopSubtitle: "IG SELECTS • CLOTHING & ACCESSORIES",
+        navHome: "Home",
+        navNewIn: "New Arrivals",
+        navClothing: "Apparel",
+        navAccessories: "Jewelry",
+        navLookbook: "Lookbook",
+        heroTitle: "Minimal Luxury • pure simplicity",
+        heroSubtitle: "A curated harmony of cold effortless aesthetics and delicate detail.",
+        shopNow: "Shop New In",
+        categoryTitle: "Our Collections",
+        featuredProducts: "This Week's Curations",
+        addToCart: "Add to Cart",
+        quickView: "Quick View",
+        soldOut: "Sold Out",
+        filterAll: "All",
+        filterClothing: "Clothing",
+        filterAccessories: "Accessories",
+        cartTitle: "Your Shopping Bag",
+        cartEmpty: "Your bag is currently empty",
+        subtotal: "Subtotal",
+        checkout: "Secure Checkout",
+        loginRegister: "Sign In / Register",
+        profileTitle: "Member Portal",
+        logout: "Sign Out",
+        registerTitle: "Create Fashion Account",
+        registerSubtitle: "Join us for exclusive offers and first-hand updates on new arrivals.",
+        labelName: "Full Name",
+        labelAge: "Age",
+        labelGender: "Gender",
+        labelEmail: "Email Address",
+        labelPassword: "Password",
+        labelStore: "7-11 Pickup Store",
+        placeholderName: "Enter your full name",
+        placeholderAge: "Enter your age",
+        placeholderEmail: "example@email.com",
+        placeholderPassword: "Create password (min 4 characters)",
+        placeholderStore: "Click 'Choose Store' to launch official map...",
+        selectStoreBtn: "Choose Store",
+        selectGender: "Select Gender",
+        genderM: "Male",
+        genderF: "Female",
+        genderO: "Other / Secret",
+        submitRegister: "Complete Registration",
+        welcomeUser: "Bonjour, ",
+        checkoutSuccess: "Thank you! Order completed. Package will be shipped to your 7-11 store!",
+        size: "Size",
+        oneSize: "One Size (F)",
+        reviews: "What They Say",
+        igFollow: "Follow our Instagram for daily outfits",
+        cloudSyncActive: "☁️ Cloud Excel Sync Active",
+        cloudSyncInactive: "💡 Local Sandbox Mode (No Cloud Sync)"
+      }
+    };
+
+    const initialProducts = [
+      {
+        id: 'c1',
+        category: 'clothing',
+        titleZh: '南法假期・亞麻慵懶寬鬆襯衫',
+        titleEn: 'French Riviera Loose Linen Shirt',
+        price: 1380,
+        rating: 5,
+        tag: 'New',
+        image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=800&q=80',
+        descriptionZh: '精選透氣天絲亞麻材質，落肩剪裁打造絕佳法式隨意感。優雅極簡白、純淨色系。',
+        descriptionEn: 'Premium breathable tencel-linen fabric. Drop shoulder design offers an effortless French aesthetic.'
+      },
+      {
+        id: 'a1',
+        category: 'accessories',
+        titleZh: '18K金微奢・不規則珍珠鎖骨鍊',
+        titleEn: '18K Gold Baroque Pearl Choker',
+        price: 890,
+        rating: 4.9,
+        tag: 'Hot',
+        image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80',
+        descriptionZh: '每一顆均為獨一無二的天然巴洛克異形珍珠，散發溫潤虹光，襯托性感鎖骨。',
+        descriptionEn: 'Each Baroque pearl is uniquely shaped by nature, reflecting a warm rainbow luster.'
+      },
+      {
+        id: 'c2',
+        category: 'clothing',
+        titleZh: '巴黎漫步・高腰垂墜感西裝寬褲',
+        titleEn: 'Parisian Draped High-Waist Trousers',
+        price: 1580,
+        rating: 5,
+        tag: 'Best',
+        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=800&q=80',
+        descriptionZh: '挺括卻帶有極致垂墜感的頂級面料，瞬間拉長腿部比例，精緻辦公與日常皆宜。',
+        descriptionEn: 'Structured yet drape-perfect luxury fabric instantly elongates leg lines.'
+      },
+      {
+        id: 'a2',
+        category: 'accessories',
+        titleZh: '復古極簡・鍍金雙層幾何戒指套組',
+        titleEn: 'Retro Double-Layer Geometric Ring Set',
+        price: 650,
+        rating: 4.8,
+        tag: 'Essential',
+        image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80',
+        descriptionZh: '極簡波浪與寬版壓紋雙戒組合，可自由疊戴，為指尖增添低調精緻細節。',
+        descriptionEn: 'Minimalist wave and textured band ring set for layered personal styling.'
+      },
+      {
+        id: 'c3',
+        category: 'clothing',
+        titleZh: '春日煦光・針織鏤空微寬鬆吊帶裙套裝',
+        titleEn: 'Warm Breeze Crochet Knit Dress Set',
+        price: 1880,
+        rating: 4.9,
+        tag: 'Limited',
+        image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80',
+        descriptionZh: '細膩的手工感鏤空織紋，內搭舒適親膚棉麻細肩帶長裙，若隱若現展現優雅。',
+        descriptionEn: 'Delicate open-knit texture with skin-friendly slip dress underneath.'
+      },
+      {
+        id: 'a3',
+        category: 'accessories',
+        titleZh: '慵懶日常・金屬編織質感大圓耳環',
+        titleEn: 'Effortless Bold Woven Hoop Earrings',
+        price: 780,
+        rating: 5,
+        tag: 'Popular',
+        image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=800&q=80',
+        descriptionZh: '極輕量編織金屬線圈，大氣優雅卻毫無負擔，修飾臉型神物。',
+        descriptionEn: 'Lightweight woven metal statement hoop earrings. Perfectly flatters all face shapes.'
+      }
+    ];
+
+    const twStoreDatabase = {
+      "台北市 (Taipei)": {
+        "信義區": [
+          { id: "711_01", name: "7-11 鑫誠信門市 (松壽路12號)" },
+          { id: "711_02", name: "7-11 捷運市府門市 (市府路2號B1)" },
+          { id: "711_03", name: "7-11 象山門市 (信義路五段150號)" }
+        ],
+        "大安區": [
+          { id: "711_04", name: "7-11 頂好精品門市 (忠孝東路四段71號)" },
+          { id: "711_05", name: "7-11 大安森林門市 (新生南路二段)" },
+          { id: "711_06", name: "7-11 師大文藝門市 (師大路88號)" }
+        ],
+        "中山區": [
+          { id: "711_07", name: "7-11 晶華奢華門市 (中山北路二段)" },
+          { id: "711_08", name: "7-11 南西流行門市 (南京西路15號)" }
+        ]
+      },
+      "新北市 (New Taipei)": {
+        "板橋區": [
+          { id: "711_09", name: "7-11 板橋車站門市 (縣民大道二段7號)" },
+          { id: "711_10", name: "7-11 新板特區門市 (中山路一段161號)" }
+        ],
+        "淡水區": [
+          { id: "711_11", name: "7-11 淡水老街門市 (中正路100號)" },
+          { id: "711_12", name: "7-11 漁人碼頭門市 (觀海路)" }
+        ]
+      },
+      "台中市 (Taichung)": {
+        "西屯區": [
+          { id: "711_13", name: "7-11 逢甲旗艦門市 (逢甲路)" },
+          { id: "711_14", name: "7-11 歌劇院精品門市 (市政北二路)" }
+        ],
+        "西區": [
+          { id: "711_15", name: "7-11 勤美草悟門市 (公益路)" }
+        ]
+      },
+      "高雄市 (Kaohsiung)": {
+        "鼓山區": [
+          { id: "711_16", name: "7-11 美術館門市 (美術東二路)" },
+          { id: "711_17", name: "7-11 駁二特區門市 (大勇路1號)" }
+        ]
+      }
+    };
+
+    function App() {
+      const [lang, setLang] = React.useState('zh');
+      const t = translations[lang] || translations.zh;
+
+      const [activeTab, setActiveTab] = React.useState('all');
+      const [products, setProducts] = React.useState(initialProducts);
+      const [isAdminOpen, setIsAdminOpen] = React.useState(false);
+      const [editingProduct, setEditingProduct] = React.useState(null);
+      
+      const [cart, setCart] = React.useState([]);
+      const [isCartOpen, setIsCartOpen] = React.useState(false);
+      const [isRegisterOpen, setIsRegisterOpen] = React.useState(false);
+
+      // 7-11 門市快速選單 React 狀態
+      const [isStoreSelectorOpen, setIsStoreSelectorOpen] = React.useState(false);
+      const [selectedCity, setSelectedCity] = React.useState('');
+      const [selectedDistrict, setSelectedDistrict] = React.useState('');
+      const [tempStore, setTempStore] = React.useState('');
+      const [isManualStoreMode, setIsManualStoreMode] = React.useState(false);
+      const [manualStoreText, setManualStoreText] = React.useState('');
+      const [storeSearchQuery, setStoreSearchQuery] = React.useState('');
+      
+      // 已完全設定為您最新部署的 Google Apps Script exec 端點連結
+      const [webhookUrl, setWebhookUrl] = React.useState(() => {
+        try {
+          return localStorage.getItem('jenyznn_webhook') || 'https://script.google.com/macros/s/AKfycbxHsCA13XK9mi85fWaDSmq4QJFr4Lx559QeK2k1QKLrVzLrcnC1yp2grrw9DjAk_Jovhw/exec';
+        } catch (e) {
+          return 'https://script.google.com/macros/s/AKfycbxHsCA13XK9mi85fWaDSmq4QJFr4Lx559QeK2k1QKLrVzLrcnC1yp2grrw9DjAk_Jovhw/exec';
+        }
+      });
+      const [isSyncing, setIsSyncing] = React.useState(false);
+
+      const [registeredUsers, setRegisteredUsers] = React.useState(() => {
+        try {
+          const saved = localStorage.getItem('jenyznn_users');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) return parsed;
+          }
+        } catch (e) {}
+        return [{
+          name: "陳宥伊 (Yumi)",
+          age: 24,
+          gender: "Female",
+          email: "yumi.selects@gmail.com",
+          password: "yumi123",
+          store: "7-11 頂好精品門市 (忠孝東路四段71號)",
+          isAdmin: false
+        }];
+      });
+
+      const [user, setUser] = React.useState(() => {
+        try {
+          const active = localStorage.getItem('jenyznn_active_user');
+          if (active) return JSON.parse(active);
+        } catch (e) {}
+        return {
+          name: "陳宥伊 (Yumi)",
+          age: 24,
+          gender: "Female",
+          email: "yumi.selects@gmail.com",
+          password: "yumi123",
+          store: "7-11 頂好精品門市 (忠孝東路四段71號)",
+          isAdmin: false
+        };
+      });
+
+      const [isLoginMode, setIsLoginMode] = React.useState(false); 
+      const [regForm, setRegForm] = React.useState({ name: '', age: '', gender: '', email: '', password: '', store: '' });
+      const [loginEmail, setLoginEmail] = React.useState('');
+      const [loginPassword, setLoginPassword] = React.useState('');
+      const [loginError, setLoginError] = React.useState('');
+
+      const ADMIN_EMAIL = "admin@jenyznn.com";
+      const ADMIN_PASSWORD = "jenyznn2026";
+
+      const [quickViewProduct, setQuickViewProduct] = React.useState(null);
+      const [favorites, setFavorites] = React.useState([]);
+      const [toastMsg, setToastMsg] = React.useState('');
+
+      const [orders, setOrders] = React.useState(() => {
+        try {
+          const saved = localStorage.getItem('jenyznn_orders');
+          if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return [];
+      });
+      
+      const [activeAdminTab, setActiveAdminTab] = React.useState('products');
+      const [receiptOrder, setReceiptOrder] = React.useState(null);
+
+      const showToast = (msg) => {
+        setToastMsg(msg);
+        setTimeout(() => {
+          setToastMsg('');
+        }, 4000);
+      };
+
+      // 核心狀態更新控制：同時更新註冊表單、登入狀態、本機 LocalStorage 並同步至 Google Sheets
+      const updateStoreState = React.useCallback(async (selectedStoreInfo) => {
+        // 1. 更新目前編輯/註冊表單內容
+        setRegForm(prev => ({
+          ...prev,
+          store: selectedStoreInfo
+        }));
+
+        // 2. 若使用者已登入，則自動寫入並同步會員檔案
+        if (user && !user.isAdmin) {
+          const updatedUser = {
+            ...user,
+            store: selectedStoreInfo
+          };
+          
+          setUser(updatedUser);
+          try {
+            localStorage.setItem('jenyznn_active_user', JSON.stringify(updatedUser));
+          } catch (e) {}
+
+          const updatedUsers = registeredUsers.map(u => 
+            u.email.toLowerCase() === user.email.toLowerCase() ? { ...u, store: selectedStoreInfo } : u
+          );
+          setRegisteredUsers(updatedUsers);
+          try {
+            localStorage.setItem('jenyznn_users', JSON.stringify(updatedUsers));
+          } catch (e) {}
+
+          showToast(lang === 'zh' ? `✨ 會員預設門市已自動更新：\n${selectedStoreInfo}` : `✨ Member store auto-updated to:\n${selectedStoreInfo}`);
+
+          // 3. 自動且即時同步至雲端 Excel 試算表
+          if (webhookUrl) {
+            await syncRegisterToGoogleSheet({
+              name: updatedUser.name,
+              age: updatedUser.age,
+              gender: updatedUser.gender,
+              email: updatedUser.email,
+              password: updatedUser.password,
+              store: updatedUser.store
+            });
+          }
+        } else {
+          showToast(lang === 'zh' ? `✨ 官方地圖選取成功！已為您自動填入格子` : `✨ Map choice successful! Auto-filled in grid.`);
+        }
+      }, [user, registeredUsers, webhookUrl, lang]);
+
+      // 向 window 註冊全域回傳接收器 (當彈出視窗跳轉回同源官網時直接呼叫，完美避開跨網域 postMessage 被瀏覽器封鎖的問題)
+      React.useEffect(() => {
+        window.handleStoreSelectedGlobal = (storeInfo) => {
+          updateStoreState(storeInfo);
+        };
+        return () => {
+          delete window.handleStoreSelectedGlobal;
+        };
+      }, [updateStoreState]);
+
+      // 備用的 postMessage 監聽
+      React.useEffect(() => {
+        const handleEmapMessage = (event) => {
+          if (event.data && event.data.type === '711_STORE_SELECTED') {
+            updateStoreState(event.data.store);
+          }
+        };
+
+        window.addEventListener('message', handleEmapMessage);
+        return () => {
+          window.removeEventListener('message', handleEmapMessage);
+        };
+      }, [updateStoreState]);
+
+      // 【一鍵直達 7-11 電子地圖】：自動附加當前官網網址作為 `parent` 參數
+      const openEmap = () => {
+        // 動態獲取當前官網的 origin + pathname (例如 https://yourname.github.io/jenyznn-shop/)
+        const parentUrl = window.location.origin + window.location.pathname;
+        const encodedParentUrl = encodeURIComponent(webhookUrl + "?parent=" + encodeURIComponent(parentUrl));
+        const emapUrl = `https://emap.presco.com.tw/c2cemap.ashx?eshopid=870&servicetype=1&url=${encodedParentUrl}`;
+        
+        const width = 1000;
+        const height = 650;
+        const left = (window.screen.width - width) / 2;
+        const top = (window.screen.height - height) / 2;
+        
+        window.open(
+          emapUrl, 
+          "711_emap_window", 
+          `width=${width},height=${height},left=${left},top=${top},status=no,toolbar=no,location=no,menubar=no`
+        );
+      };
+
+      const syncRegisterToGoogleSheet = async (registrationData) => {
+        if (!webhookUrl) return;
+        setIsSyncing(true);
+        try {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'register', ...registrationData })
+          });
+          showToast(lang === 'zh' ? '☁️ 門市變更已同步保存至雲端試算表' : '☁️ Store update synchronized to Cloud Sheet');
+        } catch (err) {
+          console.error("Cloud sync failed", err);
+          showToast(lang === 'zh' ? '⚠️ 雲端同步失敗' : '⚠️ Cloud backup failed');
+        } finally {
+          setIsSyncing(false);
+        }
+      };
+
+      const syncOrderToGoogleSheet = async (orderData) => {
+        if (!webhookUrl) return;
+        setIsSyncing(true);
+        try {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'order', ...orderData })
+          });
+          showToast(lang === 'zh' ? '☁️ 訂單明細已成功寫入雲端 Excel！' : '☁️ Order details successfully written to Cloud Sheet!');
+        } catch (err) {
+          console.error("Cloud order sync failed", err);
+          showToast(lang === 'zh' ? '⚠️ 訂單雲端儲存失敗' : '⚠️ Order backup failed');
+        } finally {
+          setIsSyncing(false);
+        }
+      };
+
+      const handleLoginSubmit = (e) => {
+        e.preventDefault();
+        if (!loginEmail || !loginPassword) {
+          setLoginError(lang === 'zh' ? '請填寫電子郵件與密碼' : 'Please fill in Email and Password');
+          return;
+        }
+
+        if (loginEmail.trim().toLowerCase() === ADMIN_EMAIL && loginPassword === ADMIN_PASSWORD) {
+          const adminSession = {
+            name: "JeNYZNN 品牌總監",
+            age: 28,
+            gender: "Female",
+            email: ADMIN_EMAIL,
+            store: "總部辦公室",
+            isAdmin: true
+          };
+          setUser(adminSession);
+          try {
+            localStorage.setItem('jenyznn_active_user', JSON.stringify(adminSession));
+          } catch (err) {}
+          setIsRegisterOpen(false);
+          setLoginEmail('');
+          setLoginPassword('');
+          setLoginError('');
+          showToast(lang === 'zh' ? '🔓 歡迎回來！已成功解鎖賣家後台管理權限' : '🔓 Welcome back! Merchant admin privileges unlocked');
+        } else {
+          const foundUser = registeredUsers.find(
+            u => u.email.trim().toLowerCase() === loginEmail.trim().toLowerCase()
+          );
+
+          if (foundUser) {
+            if (foundUser.password === loginPassword) {
+              setUser(foundUser);
+              try {
+                localStorage.setItem('jenyznn_active_user', JSON.stringify(foundUser));
+              } catch (err) {}
+              setIsRegisterOpen(false);
+              setLoginEmail('');
+              setLoginPassword('');
+              setLoginError('');
+              showToast(lang === 'zh' ? `🎉 歡迎回來，${foundUser.name}！` : `🎉 Welcome back, ${foundUser.name}!`);
+            } else {
+              setLoginError(lang === 'zh' ? '❌ 密碼輸入錯誤，請再試一次' : '❌ Incorrect password, please try again');
+            }
+          } else {
+            setLoginError(lang === 'zh' ? '❌ 此電子郵件尚未註冊過會員' : '❌ This email is not registered');
+          }
+        }
+      };
+
+      const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+      const toggleFavorite = (productId) => {
+        if (favorites.includes(productId)) {
+          setFavorites(favorites.filter(id => id !== productId));
+          showToast(lang === 'zh' ? '已移出願望清單' : 'Removed from wishlist');
+        } else {
+          setFavorites([...favorites, productId]);
+          showToast(lang === 'zh' ? '已加入願望清單！💎' : 'Added to wishlist! 💎');
+        }
+      };
+
+      const handleRegister = async (e) => {
+        e.preventDefault();
+        if (!regForm.name || !regForm.email || !regForm.password || !regForm.store) {
+          showToast(lang === 'zh' ? '請填寫完整必填欄位、設定密碼並選擇 7-11 門市喔！' : 'Please complete all fields, set password, and choose 7-11 store!');
+          return;
+        }
+
+        if (regForm.password.length < 4) {
+          showToast(lang === 'zh' ? '為了密碼安全，請設定至少 4 位數密碼' : 'For security, password must be at least 4 characters');
+          return;
+        }
+        
+        const newUser = {
+          name: regForm.name,
+          age: regForm.age || "N/A",
+          gender: regForm.gender || "Secret",
+          email: regForm.email,
+          password: regForm.password,
+          store: regForm.store,
+          isAdmin: false
+        };
+
+        const updatedUsers = [...registeredUsers.filter(u => u.email.toLowerCase() !== newUser.email.toLowerCase()), newUser];
+        setRegisteredUsers(updatedUsers);
+        try {
+          localStorage.setItem('jenyznn_users', JSON.stringify(updatedUsers));
+          setUser(newUser);
+          localStorage.setItem('jenyznn_active_user', JSON.stringify(newUser));
+        } catch (err) {}
+        
+        setIsRegisterOpen(false);
+        showToast(lang === 'zh' ? '🎉 註冊成功且已自動登入！歡迎來到 JeNYZNN' : '🎉 Registration success and logged in! Welcome to JeNYZNN!');
+
+        if (webhookUrl) {
+          await syncRegisterToGoogleSheet({
+            name: newUser.name,
+            age: newUser.age,
+            gender: newUser.gender,
+            email: newUser.email,
+            password: newUser.password,
+            store: newUser.store
+          });
+        }
+      };
+
+      const handleSaveProduct = (e) => {
+        e.preventDefault();
+        if (!editingProduct.titleZh || !editingProduct.price || !editingProduct.image) {
+          showToast(lang === 'zh' ? '請至少填寫商品名稱、價格與圖片網址！' : 'Please fill in product name, price, and image URL!');
+          return;
+        }
+
+        const priceNum = parseInt(editingProduct.price, 10) || 0;
+
+        if (editingProduct.isNew) {
+          const newProduct = {
+            ...editingProduct,
+            id: 'p_' + Date.now(),
+            price: priceNum,
+            rating: editingProduct.rating || 5,
+            isNew: undefined
+          };
+          setProducts([newProduct, ...products]);
+          showToast(lang === 'zh' ? '✨ 成功上架新商品！' : '✨ New product listed successfully!');
+        } else {
+          setProducts(products.map(p => p.id === editingProduct.id ? { ...editingProduct, price: priceNum } : p));
+          showToast(lang === 'zh' ? '✨ 商品修改已儲存！' : '✨ Product changes saved!');
+        }
+        setEditingProduct(null);
+      };
+
+      const handleDeleteProduct = (productId) => {
+        setProducts(products.filter(p => p.id !== productId));
+        setCart(cart.filter(item => item.id !== productId));
+        showToast(lang === 'zh' ? '🗑️ 商品已下架' : '🗑️ Product removed from shop');
+      };
+
+      const handleStoreSelectedViaMenu = async (storeStr) => {
+        setRegForm(prev => ({ ...prev, store: storeStr }));
+        setIsStoreSelectorOpen(false);
+
+        if (user && !user.isAdmin) {
+          const updatedUser = { ...user, store: storeStr };
+          setUser(updatedUser);
+          try {
+            localStorage.setItem('jenyznn_active_user', JSON.stringify(updatedUser));
+          } catch (e) {}
+
+          const updatedUsers = registeredUsers.map(u => 
+            u.email.toLowerCase() === user.email.toLowerCase() ? { ...u, store: storeStr } : u
+          );
+          setRegisteredUsers(updatedUsers);
+          try {
+            localStorage.setItem('jenyznn_users', JSON.stringify(updatedUsers));
+          } catch (e) {}
+
+          showToast(lang === 'zh' ? `已更新預設門市：${storeStr}` : `Updated store: ${storeStr}`);
+
+          if (webhookUrl) {
+            await syncRegisterToGoogleSheet({
+              name: updatedUser.name,
+              age: updatedUser.age,
+              gender: updatedUser.gender,
+              email: updatedUser.email,
+              password: updatedUser.password,
+              store: updatedUser.store
+            });
+          }
+        } else {
+          showToast(lang === 'zh' ? `已選取門市：${storeStr}` : `Selected store: ${storeStr}`);
+        }
+      };
+
+      const handleStoreConfirm = () => {
+        if (isManualStoreMode && manualStoreText.trim()) {
+          const storeStr = "7-11 " + manualStoreText.trim();
+          handleStoreSelectedViaMenu(storeStr);
+        } else if (tempStore) {
+          handleStoreSelectedViaMenu(tempStore);
+        }
+      };
+
+      const handleCheckout = async () => {
+        if (!user) {
+          setIsRegisterOpen(true);
+          showToast(lang === 'zh' ? '請先註冊/登入會員，以便配送包裹！' : 'Please register/login first to ship your package!');
+          return;
+        }
+
+        const newOrderId = "ORD-" + Math.floor(100000 + Math.random() * 900000);
+        const orderItemsSummary = cart.map(item => `${item.titleZh || item.titleEn} (x${item.quantity})`).join(', ');
+        const orderItemsList = cart.map(item => ({
+          title: item.titleZh || item.titleEn,
+          price: item.price,
+          quantity: item.quantity,
+          subtotal: item.price * item.quantity
+        }));
+
+        const newOrder = {
+          id: newOrderId,
+          date: new Date().toLocaleDateString(),
+          customerName: user.name,
+          customerEmail: user.email,
+          store: user.store,
+          itemsSummary: orderItemsSummary,
+          items: orderItemsList,
+          total: subtotal,
+          status: '處理中 (Processing)'
+        };
+
+        const updatedOrders = [newOrder, ...orders];
+        setOrders(updatedOrders);
+        try {
+          localStorage.setItem('jenyznn_orders', JSON.stringify(updatedOrders));
+        } catch (e) {}
+
+        setReceiptOrder(newOrder);
+        setCart([]);
+        setIsCartOpen(false);
+        showToast(t.checkoutSuccess);
+
+        if (webhookUrl) {
+          await syncOrderToGoogleSheet({
+            orderId: newOrderId,
+            customerName: user.name,
+            customerEmail: user.email,
+            store: user.store,
+            items: orderItemsList,
+            total: subtotal
+          });
+        }
+      };
+
+      const updateOrderStatus = (orderId, newStatus) => {
+        const updated = orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o);
+        setOrders(updated);
+        try {
+          localStorage.setItem('jenyznn_orders', JSON.stringify(updated));
+        } catch (e) {}
+        showToast(lang === 'zh' ? `📦 訂單 ${orderId} 狀態已更新為：${newStatus}` : `📦 Order ${orderId} status updated to: ${newStatus}`);
+      };
+
+      const addToCart = (product) => {
+        const existingItem = cart.find(item => item.id === product.id);
+        if (existingItem) {
+          setCart(cart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
+        } else {
+          setCart([...cart, { ...product, quantity: 1 }]);
+        }
+        showToast(lang === 'zh' ? `🛍️ 已加入購物車：${product.titleZh}` : `🛍️ Added to bag: ${product.titleEn}`);
+      };
+
+      const removeFromCart = (productId) => {
+        const existingItem = cart.find(item => item.id === productId);
+        if (!existingItem) return;
+        if (existingItem.quantity === 1) {
+          setCart(cart.filter(item => item.id !== productId));
+        } else {
+          setCart(cart.map(item => item.id === productId ? { ...item, quantity: item.quantity - 1 } : item));
+        }
+      };
+
+      const saveWebhookUrl = (url) => {
+        const trimmed = url.trim();
+        setWebhookUrl(trimmed);
+        try {
+          localStorage.setItem('jenyznn_webhook', trimmed);
+        } catch (e) {}
+        showToast(lang === 'zh' ? '💾 雲端 Excel 連結已安全儲存！' : '💾 Cloud Excel Webhook saved!');
+      };
+
+      return (
+        <div className="min-h-screen bg-[#FFFFFF] text-[#111111] font-sans relative overflow-x-hidden pb-16 md:pb-0">
+          
+          {/* Dynamic Floating Toast Notification */}
+          {toastMsg && (
+            <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] bg-[#111111] text-[#FFFFFF] px-6 py-3 rounded-full shadow-2xl text-sm font-medium tracking-wide flex items-center space-x-2 border border-[#E5E5E5]">
+              <Icons.Sparkles className="w-4 h-4 text-white animate-pulse" />
+              <span>{toastMsg}</span>
+            </div>
+          )}
+
+          {/* Top Promo Banner */}
+          <div className="bg-[#FAFAFA] text-[#111111] text-center py-2 px-4 text-xs tracking-widest uppercase font-light flex items-center justify-center space-x-2 border-b border-[#E5E5E5]">
+            <span>✦ {lang === 'zh' ? '全館滿 NT$1,500 即享 7-11 店到店免運 ✦' : 'FREE 7-11 SHIPPING ON ORDERS OVER NT$1,500 ✦'}</span>
+            {webhookUrl && (
+              <span className="hidden sm:inline-block bg-[#111111] text-white px-2 py-0.5 rounded-full text-[9px] font-bold">
+                {t.cloudSyncActive}
+              </span>
+            )}
+          </div>
+
+          {/* Luxury Main Navigation Header */}
+          <header className="sticky top-0 z-40 bg-[#FFFFFF]/95 backdrop-blur-md border-b border-[#E5E5E5] transition-all duration-300">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+              
+              {/* Brand Logo Header */}
+              <div className="flex flex-col items-start cursor-pointer" onClick={() => setActiveTab('all')}>
+                <h1 className="text-2xl sm:text-3xl font-serif tracking-widest font-extrabold text-[#111111]">
+                  {t.shopName}
+                </h1>
+                <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-[#767676] font-semibold -mt-1">
+                  {t.shopSubtitle}
+                </span>
+              </div>
+
+              {/* Desktop Menu Link Bar */}
+              <nav className="hidden md:flex space-x-8 text-sm tracking-widest font-medium text-[#767676]">
+                <button onClick={() => setActiveTab('all')} className={`hover:text-[#111111] transition-colors py-2 border-b-2 ${activeTab === 'all' ? 'border-[#111111] text-[#111111]' : 'border-transparent'}`}>{t.navHome}</button>
+                <button onClick={() => setActiveTab('clothing')} className={`hover:text-[#111111] transition-colors py-2 border-b-2 ${activeTab === 'clothing' ? 'border-[#111111] text-[#111111]' : 'border-transparent'}`}>{t.navClothing}</button>
+                <button onClick={() => setActiveTab('accessories')} className={`hover:text-[#111111] transition-colors py-2 border-b-2 ${activeTab === 'accessories' ? 'border-[#111111] text-[#111111]' : 'border-transparent'}`}>{t.navAccessories}</button>
+              </nav>
+
+              {/* Header Actions Panel */}
+              <div className="flex items-center space-x-3 sm:space-x-5">
+                {/* Language Toggler */}
+                <button onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} className="flex items-center space-x-1 text-xs tracking-widest font-medium border border-[#E5E5E5] px-2.5 py-1 rounded-md hover:bg-[#FAFAFA] transition-all">
+                  <Icons.Globe className="w-3.5 h-3.5 text-[#111111]" />
+                  <span className="uppercase text-[10px] font-semibold">{lang === 'zh' ? 'EN' : '繁中'}</span>
+                </button>
+
+                {/* Profile Modal Trigger */}
+                {user ? (
+                  <div onClick={() => {
+                    setRegForm({
+                      name: user.name || '',
+                      age: user.age || '',
+                      gender: user.gender || '',
+                      email: user.email || '',
+                      password: user.password || '',
+                      store: user.store || ''
+                    });
+                    setIsRegisterOpen(true);
+                  }} className="flex items-center space-x-2 cursor-pointer group bg-[#FAFAFA] hover:bg-[#E5E5E5] px-3 py-1.5 rounded-full border border-[#E5E5E5] transition-all">
+                    <div className="w-6 h-6 rounded-full bg-[#111111] text-white text-xs flex items-center justify-center font-bold">
+                      {(user.name && user.name[0]) || "U"}
+                    </div>
+                    <span className="hidden sm:inline text-xs font-semibold tracking-wide text-[#111111]">
+                      {user.name ? user.name.split(' ')[0] : 'Member'}
+                    </span>
+                  </div>
+                ) : (
+                  <button onClick={() => {
+                    setRegForm({ name: '', age: '', gender: '', email: '', password: '', store: '' });
+                    setIsRegisterOpen(true);
+                  }} className="p-2 text-[#767676] hover:text-[#111111] transition-colors">
+                    <Icons.User className="w-5.5 h-5.5" />
+                  </button>
+                )}
+
+                {/* Cart Toggler Button */}
+                <button onClick={() => setIsCartOpen(true)} className="p-2.5 bg-[#111111] text-white rounded-full hover:bg-[#333333] shadow-md transition-all relative flex items-center justify-center">
+                  <Icons.ShoppingBag className="w-5 h-5" />
+                  {cart.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold border border-[#FFFFFF]">
+                      {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+            </div>
+          </header>
+
+          {/* Hero Banner Intro Section */}
+          <section className="relative w-full h-[85vh] md:h-[90vh] flex items-center justify-center overflow-hidden bg-[#FAFAFA]">
+            <div className="absolute inset-0 z-0">
+              <img src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1920&q=80" alt="Minimal Select Shop" className="w-full h-full object-cover object-center filter brightness-[0.95]" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#FFFFFF] via-[#FFFFFF]/30 to-transparent" />
+            </div>
+
+            <div className="relative z-10 max-w-4xl mx-auto px-6 text-center text-[#111111] flex flex-col items-center">
+              <div className="inline-flex items-center space-x-2 bg-[#FFFFFF]/80 backdrop-blur-md px-4 py-1.5 rounded-full mb-6 border border-[#E5E5E5]">
+                <Icons.Sparkles className="w-4 h-4 text-[#111111]" />
+                <span className="text-xs uppercase tracking-widest font-bold text-[#111111]">{lang === 'zh' ? '2026 夏日巴黎極簡系列' : 'SUMMER PARIS MINIMAL 2026'}</span>
+              </div>
+
+              <h2 className="text-4xl sm:text-6xl md:text-7.5xl font-serif font-extrabold tracking-widest leading-tight mb-6 text-[#111111]">
+                {t.heroTitle}
+              </h2>
+              
+              <p className="text-sm sm:text-lg md:text-xl font-light tracking-wide max-w-2xl leading-relaxed text-[#767676] mb-10">
+                {t.heroSubtitle}
+              </p>
+
+              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full justify-center px-4">
+                <button onClick={() => {
+                  document.getElementById('product-catalog')?.scrollIntoView({ behavior: 'smooth' });
+                  setActiveTab('all');
+                }} className="px-10 py-4 bg-[#111111] text-white rounded-full text-xs uppercase tracking-widest font-extrabold shadow-2xl hover:bg-[#333333] transition-all duration-300 transform hover:-translate-y-1">
+                  {t.shopNow}
+                </button>
+                <button onClick={() => document.getElementById('instagram-sec')?.scrollIntoView({ behavior: 'smooth' })} className="px-10 py-4 bg-[#FFFFFF] border border-[#E5E5E5] text-[#111111] rounded-full text-xs uppercase tracking-widest font-bold hover:bg-[#FAFAFA] transition-all duration-300">
+                  Lookbook 穿搭靈感
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Main Catalog View Grid */}
+          <main id="product-catalog" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div className="text-center mb-12">
+              <span className="text-xs uppercase tracking-widest font-extrabold text-[#767676]">{t.categoryTitle}</span>
+              <h3 className="text-2.5xl sm:text-4xl font-serif font-bold text-[#111111] mt-2">{t.featuredProducts}</h3>
+              <div className="w-16 h-0.5 bg-[#111111] mx-auto mt-4" />
+            </div>
+
+            {/* Filter Options */}
+            <div className="flex justify-center space-x-2 sm:space-x-4 mb-10 overflow-x-auto pb-2">
+              {[
+                { id: 'all', label: t.filterAll },
+                { id: 'clothing', label: t.filterClothing },
+                { id: 'accessories', label: t.filterAccessories }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-6 sm:px-8 py-2.5 rounded-full text-xs tracking-widest font-semibold uppercase transition-all duration-300 whitespace-nowrap ${
+                    activeTab === tab.id 
+                      ? 'bg-[#111111] text-white shadow-md' 
+                      : 'bg-[#FAFAFA] text-[#767676] border border-[#E5E5E5] hover:bg-[#E5E5E5] hover:text-[#111111]'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Catalog Grid Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-10 sm:gap-x-8 sm:gap-y-14">
+              {products
+                .filter(product => activeTab === 'all' || product.category === activeTab)
+                .map(product => {
+                  const isFav = favorites.includes(product.id);
+                  return (
+                    <div key={product.id} className="group relative flex flex-col bg-[#FFFFFF] rounded-2xl overflow-hidden border border-[#E5E5E5] hover:shadow-xl transition-all duration-300">
+                      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#FAFAFA] cursor-pointer" onClick={() => setQuickViewProduct(product)}>
+                        <img src={product.image} alt={lang === 'zh' ? product.titleZh : product.titleEn} className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105" />
+
+                        {product.tag && (
+                          <span className="absolute top-3 left-3 bg-[#111111] text-white text-[10px] uppercase tracking-widest px-2.5 py-1 rounded-full font-bold">
+                            {product.tag}
+                          </span>
+                        )}
+
+                        <button onClick={(e) => { e.stopPropagation(); toggleFavorite(product.id); }} className="absolute top-3 right-3 p-2 rounded-full bg-[#FFFFFF]/90 backdrop-blur-md text-[#111111] hover:text-red-500 transition-colors border border-[#E5E5E5]">
+                          <Icons.Heart className={`w-4 h-4 ${isFav ? 'fill-current text-red-500' : ''}`} />
+                        </button>
+                      </div>
+
+                      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                          <h4 onClick={() => setQuickViewProduct(product)} className="text-xs sm:text-sm font-bold tracking-wide text-[#111111] hover:text-[#767676] transition-colors cursor-pointer line-clamp-1 mb-1">
+                            {lang === 'zh' ? product.titleZh : product.titleEn}
+                          </h4>
+                          <p className="text-[11px] text-[#767676] line-clamp-2 leading-relaxed mb-4">{lang === 'zh' ? product.descriptionZh : product.descriptionEn}</p>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-[#E5E5E5] pt-3.5 mt-auto">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] uppercase tracking-wider text-[#767676] font-bold">Price</span>
+                            <span className="text-sm sm:text-base font-serif font-extrabold text-[#111111]">NT$ {product.price.toLocaleString()}</span>
+                          </div>
+
+                          <button onClick={() => addToCart(product)} className="flex items-center justify-center p-2.5 rounded-full bg-[#111111] text-white hover:bg-[#333333] transition-all">
+                            <Icons.Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </main>
+
+          {/* Instagram Connect Banner */}
+          <section id="instagram-sec" className="bg-[#FAFAFA] py-16 border-t border-b border-[#E5E5E5]">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-10">
+                <Icons.Instagram className="w-6 h-6 mx-auto text-[#111111] mb-2" />
+                <h3 className="text-lg sm:text-xl font-serif font-semibold tracking-wider text-[#111111]">
+                  <a href="https://www.instagram.com/_znni117/" target="_blank" rel="noopener noreferrer" className="hover:text-[#767676] hover:underline transition-all duration-300">
+                    @_znni117
+                  </a>
+                </h3>
+                <p className="text-xs text-[#767676] mt-1">{t.igFollow}</p>
+              </div>
+
+              {/* Instagram Live Feed Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[
+                  "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?auto=format&fit=crop&w=600&q=80",
+                  "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80",
+                  "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1920&q=80",
+                  "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=600&q=80"
+                ].map((url, index) => (
+                  <a key={index} href="https://www.instagram.com/_znni117/" target="_blank" rel="noopener noreferrer" className="relative aspect-square group overflow-hidden rounded-xl shadow-sm block border border-[#E5E5E5]">
+                    <img src={url} alt="Insta Outfit" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-[#FFFFFF]/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-[#111111] text-xs tracking-widest font-bold flex items-center">
+                        VIEW OUTFIT
+                      </span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Footer of Shop */}
+          <footer className="bg-[#FFFFFF] text-[#111111] py-14 border-t border-[#E5E5E5]">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-10">
+              <div className="space-y-4">
+                <h4 className="text-xl font-serif tracking-widest font-bold">{t.shopName}</h4>
+                <p className="text-xs text-[#767676] leading-relaxed">
+                  {lang === 'zh' 
+                    ? '以極簡美學與巴黎優雅品味交融，我們精心挑選高質感布料的服飾與獨特不規則飾品，帶給您日常中最迷人的微奢美學。'
+                    : 'Blended with minimalist aesthetics and Parisian elegance, we handpick garments with high-quality fabrics and unique jewelry.'}
+                </p>
+                <div className="flex space-x-3 pt-2">
+                  <a href="https://www.instagram.com/_znni117/" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-[#FAFAFA] hover:bg-[#111111] hover:text-white transition-colors border border-[#E5E5E5]">
+                    <Icons.Instagram className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h5 className="text-xs uppercase tracking-widest font-bold text-[#111111]">{lang === 'zh' ? '客戶服務' : 'CUSTOMER SERVICE'}</h5>
+                <ul className="space-y-2 text-xs text-[#767676] font-light">
+                  <li><a href="#" className="hover:text-[#111111] transition-colors">{lang === 'zh' ? '7-11店到店配送進度' : '7-11 Shipping Information'}</a></li>
+                  <li><a href="#" className="hover:text-[#111111] transition-colors">{lang === 'zh' ? '退換貨條款' : 'Returns & Exchanges'}</a></li>
+                </ul>
+              </div>
+
+              <div className="space-y-4">
+                <h5 className="text-xs uppercase tracking-widest font-bold text-[#111111]">{lang === 'zh' ? '最新消息訂閱' : 'NEWSLETTER'}</h5>
+                <div className="flex bg-[#FAFAFA] p-1 rounded-lg border border-[#E5E5E5]">
+                  <input type="email" placeholder="example@gmail.com" className="bg-transparent border-none text-xs text-[#111111] p-2.5 focus:outline-none w-full placeholder-neutral-400" />
+                  <button onClick={() => showToast('訂閱成功！💌')} className="bg-[#111111] text-white text-xs font-bold px-4 rounded-md hover:bg-[#333333] transition-colors">Join</button>
+                </div>
+              </div>
+            </div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-[#E5E5E5] text-center text-[10px] text-[#767676] tracking-widest font-light">
+              &copy; 2026 JeNYZNN SELECT SHOP. All Rights Reserved.
+            </div>
+          </footer>
+
+          {/* Quick View Product Modal */}
+          {quickViewProduct && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setQuickViewProduct(null)} />
+              <div className="relative bg-[#FFFFFF] w-full max-w-3xl rounded-3xl overflow-hidden shadow-2xl z-10 grid grid-cols-1 md:grid-cols-2 max-h-[90vh] overflow-y-auto border border-[#E5E5E5]">
+                <div className="relative aspect-square md:aspect-auto md:h-full min-h-[300px]">
+                  <img src={quickViewProduct.image} alt={quickViewProduct.titleZh} className="w-full h-full object-cover" />
+                </div>
+                <div className="p-6 sm:p-8 flex flex-col justify-between text-[#111111]">
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <span className="text-[10px] font-bold uppercase tracking-widest bg-[#FAFAFA] text-[#111111] px-2.5 py-1 rounded-full border border-[#E5E5E5]">
+                        {quickViewProduct.category === 'clothing' ? t.filterClothing : t.filterAccessories}
+                      </span>
+                      <button onClick={() => setQuickViewProduct(null)} className="p-1.5 rounded-full hover:bg-[#FAFAFA] transition-colors border border-[#E5E5E5]">
+                        <Icons.X className="w-5 h-5 text-[#111111]" />
+                      </button>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-serif font-extrabold text-[#111111] mt-4">{lang === 'zh' ? quickViewProduct.titleZh : quickViewProduct.titleEn}</h3>
+                    <div className="text-xl font-serif font-extrabold text-[#111111] mt-2 mb-4">NT$ {quickViewProduct.price.toLocaleString()}</div>
+                    <p className="text-xs sm:text-sm text-[#767676] leading-relaxed mb-6 border-t border-[#E5E5E5] pt-4">{lang === 'zh' ? quickViewProduct.descriptionZh : quickViewProduct.descriptionEn}</p>
+                  </div>
+                  <button onClick={() => { addToCart(quickViewProduct); setQuickViewProduct(null); }} className="w-full bg-[#111111] text-white py-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition-colors hover:bg-[#333333]">
+                    {t.addToCart}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sliding Cart Drawer Panel */}
+          {isCartOpen && (
+            <div className="fixed inset-0 z-50 overflow-hidden">
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-xs" onClick={() => setIsCartOpen(false)} />
+              <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
+                <div className="w-screen max-w-md bg-[#FFFFFF] text-[#111111] shadow-2xl flex flex-col justify-between border-l border-[#E5E5E5]">
+                  <div className="px-5 py-6 border-b border-[#E5E5E5] flex items-center justify-between bg-[#FAFAFA]">
+                    <h3 className="text-lg font-serif font-bold text-[#111111]">{t.cartTitle}</h3>
+                    <button onClick={() => setIsCartOpen(false)} className="p-1.5 rounded-full hover:bg-[#E5E5E5] transition-colors border border-[#E5E5E5]">
+                      <Icons.X className="w-5 h-5 text-[#111111]" />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-[#FFFFFF]">
+                    {cart.length === 0 ? (
+                      <p className="text-center py-16 text-sm text-[#767676]">{t.cartEmpty}</p>
+                    ) : (
+                      cart.map((item) => (
+                        <div key={item.id} className="flex space-x-4 bg-[#FAFAFA] p-3 rounded-2xl border border-[#E5E5E5]">
+                          <img src={item.image} alt={item.titleZh} className="w-16 h-20 object-cover rounded-lg border border-[#E5E5E5]" />
+                          <div className="flex-1 flex flex-col justify-between">
+                            <h4 className="text-xs font-bold text-[#111111] line-clamp-1">{lang === 'zh' ? item.titleZh : item.titleEn}</h4>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-[#111111]">NT$ {item.price} x {item.quantity}</span>
+                              <div className="flex space-x-1">
+                                <button onClick={() => removeFromCart(item.id)} className="p-1 hover:bg-[#E5E5E5] rounded"><Icons.Minus className="w-3 h-3 text-[#111111]" /></button>
+                                <button onClick={() => addToCart(item)} className="p-1 hover:bg-[#E5E5E5] rounded"><Icons.Plus className="w-3 h-3 text-[#111111]" /></button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {cart.length > 0 && (
+                    <div className="p-5 bg-[#FAFAFA] border-t border-[#E5E5E5] space-y-4">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="font-bold text-[#767676]">{t.subtotal}</span>
+                        <span className="text-lg font-serif font-extrabold text-[#111111]">NT$ {subtotal.toLocaleString()}</span>
+                      </div>
+                      <button onClick={handleCheckout} className="w-full bg-[#111111] text-white py-4 rounded-xl text-xs uppercase tracking-widest font-extrabold transition-all hover:bg-[#333333] flex items-center justify-center space-x-2">
+                        {isSyncing ? <Icons.Loader2 className="w-4 h-4" /> : <Icons.ShoppingBag className="w-4 h-4" />}
+                        <span>{isSyncing ? '雲端下單中...' : t.checkout}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Member Login / Register Overlay Modal */}
+          {isRegisterOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsRegisterOpen(false)} />
+              <div className="relative bg-[#FFFFFF] w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl z-10 max-h-[90vh] overflow-y-auto border border-[#E5E5E5] text-[#111111]">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#111111]">
+                    {user ? t.profileTitle : (isLoginMode ? '會員登入' : t.registerTitle)}
+                  </h3>
+                  <button onClick={() => setIsRegisterOpen(false)} className="p-1.5 rounded-full hover:bg-[#FAFAFA] transition-colors border border-[#E5E5E5]">
+                    <Icons.X className="w-5 h-5 text-[#111111]" />
+                  </button>
+                </div>
+
+                {user && (
+                  <div className="mb-6 p-4 bg-[#FAFAFA] rounded-2xl border border-[#E5E5E5] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[9px] text-[#767676] block font-bold uppercase">{user.isAdmin ? '👑 品牌管理者' : 'Current Member'}</span>
+                        <span className="text-sm font-bold text-[#111111]">{user.name}</span>
+                      </div>
+                      <button onClick={() => { setUser(null); localStorage.removeItem('jenyznn_active_user'); }} className="flex items-center space-x-1 text-xs text-red-600 font-bold hover:text-red-800 transition-colors">
+                        <Icons.LogOut className="w-3.5 h-3.5" />
+                        <span>{t.logout}</span>
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-3 text-xs text-[#767676] border-t border-[#E5E5E5] items-center">
+                      <div><strong>{t.labelAge}:</strong> {user.age} </div>
+                      <div><strong>{t.labelGender}:</strong> {user.gender} </div>
+                      <div className="col-span-2"><strong>{t.labelEmail}:</strong> {user.email} </div>
+                      <div className="col-span-2 text-[#111111] border-t border-[#E5E5E5] pt-3 mt-1">
+                        <div className="flex justify-between items-center mb-1">
+                          <strong>📍 預設 7-11 配送門市:</strong>
+                          <button 
+                            onClick={openEmap} 
+                            type="button" 
+                            className="text-[10px] text-white bg-[#C53F3F] hover:bg-red-700 px-3 py-1.5 rounded-full font-bold transition-colors flex items-center space-x-1 shadow-sm"
+                          >
+                            <Icons.Globe className="w-3 h-3 text-white"/>
+                            <span>修改門市 ↗</span>
+                          </button>
+                        </div>
+                        {/* 格子支援自動回填，也留有手動編輯、貼上複製文本的彈性空間 */}
+                        <input 
+                          type="text" 
+                          required 
+                          value={user.store || ''} 
+                          onChange={(e) => {
+                            const newStore = e.target.value;
+                            const updatedUser = { ...user, store: newStore };
+                            setUser(updatedUser);
+                            localStorage.setItem('jenyznn_active_user', JSON.stringify(updatedUser));
+                          }}
+                          className="w-full bg-white border border-[#E5E5E5] rounded-xl px-4 py-3 text-xs font-semibold focus:outline-none text-[#111111] mt-2 shadow-inner" 
+                          placeholder="請點選修改門市或在此貼上店址..."
+                        />
+                      </div>
+                    </div>
+
+                    {/* Personal Order History */}
+                    {!user.isAdmin && (
+                      <div className="mt-4 pt-4 border-t border-[#E5E5E5]">
+                        <h4 className="text-xs font-bold text-[#111111] uppercase tracking-wider mb-2 flex items-center space-x-1">
+                          <Icons.Package className="w-3.5 h-3.5 text-[#111111]" />
+                          <span>📜 您的歷史訂單 (Your Orders)</span>
+                        </h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {orders.filter(o => o.customerEmail === user.email).length === 0 ? (
+                            <p className="text-[10px] text-neutral-400 text-center py-2">目前尚無消費紀錄</p>
+                          ) : (
+                            orders.filter(o => o.customerEmail === user.email).map(o => (
+                              <div key={o.id} className="bg-white p-2.5 rounded-xl border border-[#E5E5E5]">
+                                <div className="flex justify-between items-center text-[10px] font-bold">
+                                  <span>{o.id}</span>
+                                  <span className="text-neutral-500">{o.status}</span>
+                                </div>
+                                <p className="text-[10px] text-neutral-500 mt-1">{o.itemsSummary}</p>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {user?.isAdmin && (
+                  <button onClick={() => { setIsRegisterOpen(false); setIsAdminOpen(true); }} className="w-full bg-[#111111] text-white text-xs font-bold py-3 px-4 rounded-xl mb-4 hover:bg-[#333333] transition-colors shadow">
+                    🛠️ 進入賣家管理專區
+                  </button>
+                )}
+
+                {!user && (
+                  <div className="flex border-b border-[#E5E5E5] mb-6">
+                    <button type="button" onClick={() => setIsLoginMode(false)} className={`flex-1 py-2 text-xs font-bold ${!isLoginMode ? 'border-b-2 border-[#111111] text-[#111111]' : 'text-neutral-400'}`}>註冊新帳戶</button>
+                    <button type="button" onClick={() => setIsLoginMode(true)} className={`flex-1 py-2 text-xs font-bold ${isLoginMode ? 'border-b-2 border-[#111111] text-[#111111]' : 'text-neutral-400'}`}>會員登入</button>
+                  </div>
+                )}
+
+                {!user && isLoginMode ? (
+                  <form onSubmit={handleLoginSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-[#111111] uppercase mb-1">{t.labelEmail} *</label>
+                      <input type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#111111]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#111111] uppercase mb-1">登入密碼 *</label>
+                      <input type="password" required value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} className="w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#111111]" />
+                    </div>
+                    {loginError && <p className="text-xs text-red-500 text-center">{loginError}</p>}
+                    <button type="submit" className="w-full bg-[#111111] text-white py-4 rounded-xl text-xs uppercase font-extrabold hover:bg-[#333333]">確認登入</button>
+                  </form>
+                ) : (
+                  (!user || user) && (
+                    <form onSubmit={handleRegister} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-[#111111] mb-1">{t.labelName} *</label>
+                        <input type="text" required value={regForm.name} onChange={(e) => setRegForm({...regForm, name: e.target.value})} className="w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl px-4 py-3 text-sm focus:outline-none text-[#111111]" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-[#111111] mb-1">{t.labelAge}</label>
+                          <input type="number" value={regForm.age} onChange={(e) => setRegForm({...regForm, age: e.target.value})} className="w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl px-4 py-3 text-sm focus:outline-none text-[#111111]" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-[#111111] mb-1">{t.labelGender}</label>
+                          <select value={regForm.gender} onChange={(e) => setRegForm({...regForm, gender: e.target.value})} className="w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl px-4 py-3 text-sm focus:outline-none text-[#111111] h-[46px] px-2">
+                            <option value="">選擇性別</option>
+                            <option value="Male">{t.genderM}</option>
+                            <option value="Female">{t.genderF}</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#111111] mb-1">{t.labelEmail} *</label>
+                        <input type="email" required value={regForm.email} onChange={(e) => setRegForm({...regForm, email: e.target.value})} className="w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl px-4 py-3 text-sm focus:outline-none text-[#111111]" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#111111] mb-1">設定密碼 *</label>
+                        <input type="password" required value={regForm.password} onChange={(e) => setRegForm({...regForm, password: e.target.value})} className="w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl px-4 py-3 text-sm focus:outline-none text-[#111111]" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#111111] mb-1">{t.labelStore} *</label>
+                        <div className="flex space-x-2">
+                          <input 
+                            type="text" 
+                            required 
+                            placeholder={t.placeholderStore} 
+                            value={regForm.store} 
+                            onChange={(e) => setRegForm({...regForm, store: e.target.value})}
+                            className="flex-1 bg-white border border-[#E5E5E5] rounded-xl px-4 py-3 text-sm focus:outline-none overflow-hidden text-ellipsis text-[#111111] shadow-inner" 
+                          />
+                          <button type="button" onClick={openEmap} className="bg-[#111111] text-white px-4 py-3 rounded-xl text-xs uppercase tracking-widest font-extrabold hover:bg-[#333333] whitespace-nowrap">選擇門市</button>
+                        </div>
+                      </div>
+                      <button type="submit" className="w-full bg-[#111111] text-white py-4 rounded-xl text-xs uppercase font-extrabold hover:bg-[#333333]">
+                        {isSyncing ? '同步寫入雲端中...' : (user ? '更新檔案' : t.submitRegister)}
+                      </button>
+                    </form>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Receipt Modal Card */}
+          {receiptOrder && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/60" onClick={() => setReceiptOrder(null)} />
+              <div className="relative bg-[#FFFFFF] text-[#111111] w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl z-10 text-center max-h-[90vh] overflow-y-auto border border-[#E5E5E5]">
+                <div className="w-12 h-12 bg-neutral-100 text-[#111111] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#E5E5E5]">
+                  <Icons.Check className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-serif font-bold text-[#111111]">訂單已成功送出！</h3>
+                <p className="text-xs text-neutral-400 mt-1">明細已同步備份寫入您的雲端 Excel 表單</p>
+                
+                <div className="bg-[#FAFAFA] border border-[#E5E5E5] rounded-2xl p-4 my-5 text-left space-y-2 text-xs">
+                  <div className="flex justify-between text-[10px] text-neutral-400 border-b border-[#E5E5E5] pb-2">
+                    <span>單號：{receiptOrder.id}</span>
+                    <span>時間：{receiptOrder.date}</span>
+                  </div>
+                  {receiptOrder.items.map((it, idx) => (
+                    <div key={idx} className="flex justify-between">
+                      <span>{it.title} x {it.quantity}</span>
+                      <span className="font-bold">NT$ {it.subtotal.toLocaleString()}</span>
+                    </div>
+                  ))}
+                  <div className="border-t border-[#E5E5E5] pt-2 font-bold flex justify-between">
+                    <span>總計</span>
+                    <span className="text-[#111111]">NT$ {receiptOrder.total.toLocaleString()}</span>
+                  </div>
+                  <div className="text-[10px] text-neutral-400 bg-[#FFFFFF] p-2 rounded-lg mt-2 border border-[#E5E5E5]">
+                    <strong>配送：</strong> {receiptOrder.store}
+                  </div>
+                </div>
+
+                <button onClick={() => setReceiptOrder(null)} className="w-full bg-[#111111] text-white py-3 rounded-xl text-xs uppercase font-extrabold hover:bg-[#333333]">繼續選購</button>
+              </div>
+            </div>
+          )}
+
+          {/* Merchant Admin Dashboard Overlay */}
+          {isAdminOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/60" onClick={() => { setIsAdminOpen(false); setEditingProduct(null); }} />
+              <div className="relative bg-[#FFFFFF] w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl z-10 grid grid-cols-1 md:grid-cols-12 max-h-[85vh] border border-[#E5E5E5]">
+                
+                <div className="md:col-span-7 p-6 overflow-y-auto flex flex-col text-[#111111]">
+                  <div className="flex space-x-4 mb-4 border-b border-[#E5E5E5] pb-2">
+                    <button onClick={() => setActiveAdminTab('products')} className={`text-xs font-bold uppercase pb-1 ${activeAdminTab === 'products' ? 'border-b-2 border-[#111111] text-[#111111]' : 'text-neutral-400'}`}>📦 商品管理</button>
+                    <button onClick={() => setActiveAdminTab('orders')} className={`text-xs font-bold uppercase pb-1 ${activeAdminTab === 'orders' ? 'border-b-2 border-[#111111] text-[#111111]' : 'text-neutral-400'}`}>📜 訂單管理 ({orders.length})</button>
+                  </div>
+
+                  {activeAdminTab === 'products' ? (
+                    <>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-base font-serif font-bold text-[#111111]">現有選品清單</h3>
+                        <button onClick={() => setEditingProduct({ isNew: true, category: 'clothing', titleZh: '', titleEn: '', price: '', tag: 'New', image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80', descriptionZh: '', descriptionEn: '', rating: 5 })} className="bg-[#111111] text-white text-[10px] font-bold px-3 py-2 rounded-lg hover:bg-[#333333]">新增上架</button>
+                      </div>
+                      <div className="space-y-3 flex-1 overflow-y-auto">
+                        {products.map((p) => (
+                          <div key={p.id} className="flex items-center justify-between bg-[#FAFAFA] p-3 rounded-2xl border border-[#E5E5E5]">
+                            <div className="flex items-center space-x-3">
+                              <img src={p.image} alt={p.titleZh} className="w-12 h-16 object-cover rounded-lg border border-[#E5E5E5]" />
+                              <div>
+                                <h4 className="text-xs font-bold text-[#111111]">{p.titleZh}</h4>
+                                <span className="text-xs font-bold text-neutral-500">NT$ {p.price}</span>
+                              </div>
+                            </div>
+                            <div className="flex space-x-1">
+                              <button onClick={() => setEditingProduct({ ...p, isNew: false })} className="px-2 py-1 bg-[#FFFFFF] border border-[#E5E5E5] rounded text-[10px] font-bold text-[#111111] hover:bg-[#FAFAFA]">編輯</button>
+                              <button onClick={() => handleDeleteProduct(p.id)} className="px-2 py-1 bg-red-100 text-red-600 rounded text-[10px] font-bold hover:bg-red-200">下架</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      {orders.map((o) => (
+                        <div key={o.id} className="bg-[#FAFAFA] p-4 rounded-2xl border border-[#E5E5E5] text-xs space-y-1 text-[#111111]">
+                          <div className="flex justify-between font-bold">
+                            <span className="text-[#111111] font-serif">{o.id}</span>
+                            <span className="text-neutral-500">{o.status}</span>
+                          </div>
+                          <p><strong>客戶：</strong> {o.customerName} ({o.customerEmail})</p>
+                          <p><strong>門市：</strong> {o.store}</p>
+                          <p><strong>商品：</strong> {o.itemsSummary}</p>
+                          <p className="font-bold border-t border-[#E5E5E5] pt-1">總額：NT$ {o.total}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="md:col-span-5 p-6 bg-[#FAFAFA] flex flex-col justify-between border-l border-[#E5E5E5]">
+                  <div>
+                    <h4 className="text-xs font-extrabold uppercase mb-4 text-[#111111]">雲端試算表整合與配置</h4>
+                    <div className="bg-[#FFFFFF] rounded-2xl p-4 border border-[#E5E5E5] space-y-2 mb-4 text-xs">
+                      <h5 className="font-bold flex items-center space-x-1 text-[#111111]">
+                        <Icons.Database className="w-3.5 h-3.5" />
+                        <span>🔌 Google Sheets 網址設定</span>
+                      </h5>
+                      <input type="url" value={webhookUrl} onChange={(e) => saveWebhookUrl(e.target.value)} className="w-full bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg px-3 py-2 text-[10px] focus:outline-none text-[#111111]" />
+                      <a href="https://docs.google.com/spreadsheets/d/1wZ64GDR7wmSUGBfznsuXZw5R49Nz0Tq7rsGLNSGHg8M/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#111111] underline block mt-2 hover:text-[#333333]">
+                        直接開啟您的 JeNYZNN 雲端試算表 ↗
+                      </a>
+                    </div>
+                  </div>
+
+                  {editingProduct ? (
+                    <form onSubmit={handleSaveProduct} className="space-y-3">
+                      <input type="text" placeholder="中文品名" required value={editingProduct.titleZh} onChange={(e) => setEditingProduct({ ...editingProduct, titleZh: e.target.value })} className="w-full bg-[#FFFFFF] border border-[#E5E5E5] rounded-lg p-2 text-xs focus:outline-none text-[#111111]" />
+                      <input type="number" placeholder="售價" required value={editingProduct.price} onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })} className="w-full bg-[#FFFFFF] border border-[#E5E5E5] rounded-lg p-2 text-xs focus:outline-none text-[#111111]" />
+                      <input type="text" placeholder="圖片連結" required value={editingProduct.image} onChange={(e) => setEditingProduct({ ...editingProduct, image: e.target.value })} className="w-full bg-[#FFFFFF] border border-[#E5E5E5] rounded-lg p-2 text-xs focus:outline-none text-[#111111]" />
+                      <button type="submit" className="w-full bg-[#111111] text-white py-2 rounded-lg text-xs font-bold hover:bg-[#333333]">確認儲存</button>
+                    </form>
+                  ) : (
+                    <p className="text-center text-xs text-neutral-400 py-6">選取左側商品可開始編輯細節</p>
+                  )}
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Bottom Tab Navigation bar */}
+          <div className="fixed bottom-0 inset-x-0 z-40 bg-[#FFFFFF]/95 backdrop-blur-md border-t border-[#E5E5E5] md:hidden grid grid-cols-4 py-2 text-center text-[10px] font-bold text-[#767676]">
+            <button onClick={() => { setActiveTab('all'); document.getElementById('product-catalog')?.scrollIntoView({ behavior: 'smooth' }); }} className="flex flex-col items-center"><Icons.Sparkles className="w-5 h-5 text-[#111111]" /><span>首頁</span></button>
+            <button onClick={() => { setActiveTab('clothing'); document.getElementById('product-catalog')?.scrollIntoView({ behavior: 'smooth' }); }} className="flex flex-col items-center"><Icons.Package className="w-5 h-5 text-[#111111]" /><span>服飾</span></button>
+            <button onClick={() => { setActiveTab('accessories'); document.getElementById('product-catalog')?.scrollIntoView({ behavior: 'smooth' }); }} className="flex flex-col items-center"><Icons.Heart className="w-5 h-5 text-[#111111]" /><span>飾品</span></button>
+            <button onClick={() => { setRegForm(user ? { ...user } : { name: '', age: '', gender: '', email: '', password: '', store: '' }); setIsRegisterOpen(true); }} className="flex flex-col items-center"><Icons.User className="w-5 h-5 text-[#111111]" /><span>{user ? '我的' : '註冊'}</span></button>
+          </div>
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
